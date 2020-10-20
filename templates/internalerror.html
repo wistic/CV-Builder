@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}
+    Internal Server Error
+{% endblock title %}
+{% block content %}
+    <div class="card mt-1">
+        <img src="/static/images/500-internal-error.jpg" class="card-img-top" alt="500">
+        <div class="card-body text-center">
+            <a class="btn btn-outline-danger" href="/reset">Reset HTTP Session</a>
+        </div>
+    </div>
+{% endblock content %}

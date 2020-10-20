@@ -1,10 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>CSRF Error</title>
-</head>
-<body>
-    CSRF Error
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}
+    Bad Request
+{% endblock title %}
+{% block content %}
+    <div class="card mt-5">
+        <img src="/static/images/sharam.jpg" class="card-img-top" alt="500">
+        <div class="card-body text-center mt-4">
+            <div class="card-text font-weight-bold">
+                Bad Request. CSRF Token Validation Failed.
+            </div>
+            <div class="text-center mt-4">
+                <a class="btn btn-outline-danger rounded-pill" href="/reset">Reset HTTP Session</a>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
