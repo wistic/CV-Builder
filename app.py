@@ -4,7 +4,7 @@ import pymysql.cursors
 import os
 
 from utility import logger, get_random_hash
-from db import verify_login, update_password, get_student_id, remove_token, insert_token, get_student_data, \
+from dbManager import verify_login, update_password, get_student_id, remove_token, insert_token, get_student_data, \
     remove_all_tokens
 from config import config
 
@@ -13,16 +13,32 @@ app.secret_key = os.urandom(16)
 csrf = CSRFProtect(app)
 logger.debug('Started')
 try:
-    mysql_password = os.environ['MYSQLPASSWORD']
+    mysql_password = os.environ['MYSQL_PASSWORD']
 except KeyError:
     mysql_password = config['mysql_password']
+try:
+    mysql_host = os.environ['MYSQL_HOST']
+except KeyError:
+    mysql_host = config['mysql_host']
+try:
+    mysql_user = os.environ['MYSQL_USER']
+except KeyError:
+    mysql_user = config['mysql_user']
+try:
+    mysql_db = os.environ['MYSQL_DB']
+except KeyError:
+    mysql_db = config['mysql_db']
+try:
+    mysql_charset = os.environ['MYSQL_CHARSET']
+except KeyError:
+    mysql_charset = config['mysql_charset']
 
 try:
-    connection = pymysql.connect(host=config['host'],
-                                 user=config['user'],
+    connection = pymysql.connect(host=mysql_host,
+                                 user=mysql_user,
                                  password=mysql_password,
-                                 db=config['database'],
-                                 charset=config['charset'],
+                                 db=mysql_db,
+                                 charset=mysql_charset,
                                  cursorclass=pymysql.cursors.DictCursor,
                                  autocommit=True)
 except pymysql.Error:

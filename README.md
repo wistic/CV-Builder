@@ -3,11 +3,11 @@
 - Install [MySQL](https://dev.mysql.com/downloads/) or
 - Install [Docker](https://docs.docker.com/engine/install/) and run the following command:
 ```shell
- docker run -d \
-    -p 3306:3306 \
-    -v cv-data:/var/lib/mysql \
-    -e MYSQL_ROOT_PASSWORD=password \
-    mysql
+ $ docker run -d \
+      -p 3306:3306 \
+      -v cv-data:/var/lib/mysql \
+      -e MYSQL_ROOT_PASSWORD=password \
+      mysql
 ```
 
 - Test your Mysql installation by running
