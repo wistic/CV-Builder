@@ -45,11 +45,7 @@ def homepage():
         session.pop('userToken', None)
         return redirect('/login')
     student_data = get_student_data(student_id, connection)
-    if student_data == "Empty Set":
-        name = "John Doe"
-    else:
-        name = student_data['Name']
-    return render_template('index.html', success=success, name=name)
+    return render_template('index.html', success=success, student_data=student_data)
 
 
 @app.route('/login')
