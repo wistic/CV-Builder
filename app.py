@@ -4,7 +4,7 @@ import pymysql.cursors
 import os
 
 from utility import logger, get_random_hash
-from db import verify_login
+from db import verify_login, update_password, get_student_id, remove_token, insert_token, get_student_data
 from config import config
 
 app = Flask(__name__)
@@ -39,10 +39,17 @@ def homepage():
     if 'success' in session:
         success = session['success']
         session.pop('success', None)
+    student_id = get_student_id(session['userToken'], connection)
+    if student_id == -1:
+        session['error'] = "You must login again to access the site."
+        session.pop('userToken', None)
+        return redirect('/login')
+    student_data = get_student_data(student_id, connection)
+    if student_data == "Empty Set":
+        name = "John Doe"
     else:
-        pass
-        # TODO Validate
-    return render_template('index.html', success=success)
+        name = student_data['Name']
+    return render_template('index.html', success=success, name=name)
 
 
 @app.route('/login')
@@ -60,6 +67,24 @@ def login():
         success = session['success']
         session.pop('success', None)
     return render_template('login.html', error=error, success=success)
+
+
+@app.route('/updatepwd')
+def update_pwd():
+    if 'adminError' in session:
+        abort(500)
+    if 'userToken' not in session:
+        session['error'] = "You must login to access the site."
+        return redirect('/login')
+    error = ''
+    if 'error' in session:
+        error = session['error']
+        session.pop('error', None)
+    success = ''
+    if 'success' in session:
+        success = session['success']
+        session.pop('success', None)
+    return render_template('updatepwd.html', error=error, success=success)
 
 
 @app.route('/handle_login', methods=['POST'])
@@ -84,7 +109,7 @@ def handle_login():
         session['success'] = status
         random_session_hash = get_random_hash()
         session['userToken'] = random_session_hash
-        # TODO Insert into db
+        insert_token(random_session_hash, enrollment_no, connection)
         return redirect('/')
     elif status == "Database inconsistency - Call Admin":
         session['adminError'] = status
@@ -94,6 +119,45 @@ def handle_login():
         return redirect('/login')
 
 
+@app.route('/handle_updatepwd', methods=['POST'])
+def handle_updatepwd():
+    if 'adminError' in session:
+        abort(500)
+    if 'userToken' not in session:
+        session['error'] = "You must login to access the site."
+        return redirect('/login')
+    try:
+        current_password = request.form['current_password']
+    except KeyError:
+        current_password = ''
+    try:
+        new_password = request.form['new_password']
+    except KeyError:
+        new_password = ''
+    try:
+        confirm_password = request.form['confirm_password']
+    except KeyError:
+        confirm_password = ''
+    if connection == '':
+        session['adminError'] = "Database inconsistency - Call Admin"
+        abort(500)
+    enrollment_no = get_student_id(session['userToken'], connection)
+    if enrollment_no == -1:
+        session['error'] = "You must login again to access the site."
+        session.pop('userToken', None)
+        return redirect('/login')
+    status = update_password(enrollment_no, current_password, new_password, confirm_password, connection)
+    if status == "Password updated successfully":
+        session['success'] = status
+        return redirect('/updatepwd')
+    elif status == "Database inconsistency - Call Admin":
+        session['adminError'] = status
+        abort(500)
+    else:
+        session['error'] = status
+        return redirect('/updatepwd')
+
+
 @app.route('/logout')
 def logout():
     if 'adminError' in session:
@@ -101,23 +165,27 @@ def logout():
     if 'userToken' not in session:
         session['error'] = "You must login first"
         return redirect('/login')
+    token = session['userToken']
     session.pop('userToken', None)
-    # TODO Remove from db
+    remove_token(token, connection)
     session['success'] = "You are now successfully logged out."
     return redirect('/login')
 
 
 @app.route('/reset')
 def reset_session():
+    if 'userToken' in session:
+        token = session['userToken']
+        remove_token(token, connection)
     session.clear()
-    # TODO Remove from db
     return redirect('/login')
 
 
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
+    token = session['userToken']
     session.clear()
-    # TODO Remove from db
+    remove_token(token, connection)
     return render_template('csrf_error.html', reason=e.description), 400
 
 

@@ -1,7 +1,7 @@
 from utility import verify_password
 import pymysql
 
-from utility import logger
+from utility import logger, hash_password
 
 
 def verify_login(enrollment_no, password, connection):
@@ -16,8 +16,6 @@ def verify_login(enrollment_no, password, connection):
 
     if enrollment_no == '':
         return "Enrollment Number required"
-    elif not enrollment_no.isdigit():
-        return "Enrollment Number is a pure number."
     elif password == '':
         return "Password required"
     elif len(result) == 0:
@@ -30,3 +28,28 @@ def verify_login(enrollment_no, password, connection):
             return "Login Success"
         else:
             return "Invalid Enrollment Number or Password"
+
+
+def update_password(enrollment_no, current_password, new_password, confirm_new_password, connection):
+    status = verify_login(enrollment_no, current_password, connection)
+    if status == "Database inconsistency - Call Admin":
+        return status
+    elif status == "Password required" or status == "Invalid Enrollment Number or Password":
+        return "Current password incorrect"
+    elif new_password != confirm_new_password or new_password == '' or confirm_new_password == '':
+        return "Given passwords aren't acceptable"
+    elif new_password == current_password:
+        return "New Password should be different than old one"
+    elif status == "Login Success":
+        try:
+            with connection.cursor() as cursor:
+                sql = "UPDATE `Credentials` SET `Password_hash`=%s WHERE `Student_id`=%s"
+                hashed_password = hash_password(new_password)
+                cursor.execute(sql, (hashed_password, enrollment_no))
+            connection.commit()
+        except (pymysql.Error, AttributeError):
+            logger.critical('Password Validation Error')
+            return "Database inconsistency - Call Admin"
+        else:
+            status = "Password updated successfully"
+            return status

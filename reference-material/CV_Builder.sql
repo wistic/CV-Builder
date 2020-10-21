@@ -115,13 +115,13 @@ CREATE TABLE `Achievements` (
   PRIMARY KEY (`Student_id`, `Achievement`)
 );
 
-ALTER TABLE `Students` ADD FOREIGN KEY (`Student_id`) REFERENCES `Credentials` (`Student_id`);
+ALTER TABLE `Credentials` ADD FOREIGN KEY (`Student_id`) REFERENCES `Students` (`Student_id`);
 
 ALTER TABLE `User_Tokens` ADD FOREIGN KEY (`Student_id`) REFERENCES `Students` (`Student_id`);
 
-ALTER TABLE `Students` ADD FOREIGN KEY (`Student_id`) REFERENCES `Tenth` (`Student_id`);
+ALTER TABLE `Tenth` ADD FOREIGN KEY (`Student_id`) REFERENCES `Students` (`Student_id`);
 
-ALTER TABLE `Students` ADD FOREIGN KEY (`Student_id`) REFERENCES `Twelfth` (`Student_id`);
+ALTER TABLE `Twelfth` ADD FOREIGN KEY (`Student_id`) REFERENCES `Students` (`Student_id`);
 
 ALTER TABLE `References` ADD FOREIGN KEY (`Student_id`) REFERENCES `Students` (`Student_id`);
 
