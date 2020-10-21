@@ -1,7 +1,6 @@
-from utility import verify_password
 import pymysql
 
-from utility import logger, hash_password
+from utility import logger, hash_password, verify_password
 
 
 def verify_login(enrollment_no, password, connection):
@@ -46,7 +45,6 @@ def update_password(enrollment_no, current_password, new_password, confirm_new_p
                 sql = "UPDATE `Credentials` SET `Password_hash`=%s WHERE `Student_id`=%s"
                 hashed_password = hash_password(new_password)
                 cursor.execute(sql, (hashed_password, enrollment_no))
-            connection.commit()
         except (pymysql.Error, AttributeError):
             logger.critical('Password Validation Error')
             return "Database inconsistency - Call Admin"

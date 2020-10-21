@@ -10,7 +10,6 @@ def insert_token(token, student_id, connection):
         with connection.cursor() as cursor:
             sql = "INSERT INTO `User_Tokens` (`Session_hash`, `Student_id`, `CreatedAt`) VALUES (%s, %s, %s); "
             cursor.execute(sql, (token, student_id, now.strftime('%Y-%m-%d %H:%M:%S')))
-        connection.commit()
     except pymysql.Error:
         logger.critical('Token Insertion Error')
 
@@ -22,7 +21,6 @@ def remove_token(token, connection):
             with connection.cursor() as cursor:
                 sql = "DELETE FROM `User_Tokens` WHERE `Session_hash`=%s"
                 cursor.execute(sql, (token,))
-            connection.commit()
         except (pymysql.Error, AttributeError):
             logger.critical('Token Removal Error')
 
@@ -34,9 +32,17 @@ def get_student_id(token, connection):
             cursor.execute(sql, (token,))
             result = cursor.fetchone()
             if result is not None:
-                student_id = result['Student_id']
+                return result['Student_id']
             else:
-                student_id = -1
-        return student_id
+                return -1
     except (pymysql.Error, AttributeError):
         logger.critical('Token Validation Error')
+
+
+def remove_all_tokens(connection):
+    try:
+        with connection.cursor() as cursor:
+            sql = "TRUNCATE TABLE `User_Tokens`"
+            cursor.execute(sql)
+    except (pymysql.Error, AttributeError):
+        logger.critical('Table Truncate Error')

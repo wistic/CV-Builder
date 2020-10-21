@@ -4,7 +4,8 @@ import pymysql.cursors
 import os
 
 from utility import logger, get_random_hash
-from db import verify_login, update_password, get_student_id, remove_token, insert_token, get_student_data
+from db import verify_login, update_password, get_student_id, remove_token, insert_token, get_student_data, \
+    remove_all_tokens
 from config import config
 
 app = Flask(__name__)
@@ -22,10 +23,13 @@ try:
                                  password=mysql_password,
                                  db=config['database'],
                                  charset=config['charset'],
-                                 cursorclass=pymysql.cursors.DictCursor)
+                                 cursorclass=pymysql.cursors.DictCursor,
+                                 autocommit=True)
 except pymysql.Error:
     logger.critical('Unable to connect to the database.')
     connection = ''
+
+remove_all_tokens(connection)
 
 
 @app.route('/')
