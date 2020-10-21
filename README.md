@@ -1,8 +1,12 @@
-### For testing purposes
+### Installation
 
-- Initialise the database using CV_Builder.sql
-- Update config.py as per your needs
-- Put a dummy entry in the db using testing.sql for testing purposes.
-
-Username : `123`
-Password : `123`
+- Install [Docker](https://docs.docker.com/engine/install/)
+- Run the following command:
+```shell
+ docker run -d \
+    -p 3306:3306 \
+    -v todo-mysql-data:/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=secret \
+    -e MYSQL_DATABASE=todos \
+    mysql
+```
