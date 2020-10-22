@@ -40,7 +40,8 @@ try:
                                  db=mysql_db,
                                  charset=mysql_charset,
                                  cursorclass=pymysql.cursors.DictCursor,
-                                 autocommit=True)
+                                 autocommit=True,
+                                 connect_timeout=100)
 except pymysql.Error:
     logger.critical('Unable to connect to the database.')
     connection = ''
