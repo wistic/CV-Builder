@@ -1,17 +1,20 @@
+# Import from pip packages
 from flask import (Flask, render_template, redirect, request, session, abort)
-from flask_wtf.csrf import (CSRFProtect, CSRFError)
+from flask_wtf.csrf import CSRFProtect
 import pymysql.cursors
 import os
 
-from utility import logger, get_random_hash
-from dbManager import verify_login, update_password, get_student_id, remove_token, insert_token, get_student_data, \
-    remove_all_tokens
+# Import from local packages
+from utility import *
+from dbManager import *
 from config import config
 
+# App initialization
 app = Flask(__name__)
 app.secret_key = os.urandom(16)
 csrf = CSRFProtect(app)
-logger.debug('Started')
+
+# Connection variables initialization
 try:
     mysql_password = os.environ['MYSQL_PASSWORD']
 except KeyError:
@@ -33,6 +36,7 @@ try:
 except KeyError:
     mysql_charset = config['mysql_charset']
 
+# Mysql connection initialization
 try:
     connection = pymysql.connect(host=mysql_host,
                                  user=mysql_user,
@@ -46,9 +50,10 @@ except pymysql.Error:
     logger.critical('Unable to connect to the database.')
     connection = ''
 
-remove_all_tokens(connection)
+remove_all_tokens(connection)  # Remove all sessions
 
 
+# BEGIN Route definition #
 @app.route('/')
 def homepage():
     if 'adminError' in session:
@@ -86,8 +91,8 @@ def login():
     return render_template('login.html', error=error, success=success)
 
 
-@app.route('/updatepwd')
-def update_pwd():
+@app.route('/update_password')
+def update_password():
     if 'adminError' in session:
         abort(500)
     if 'userToken' not in session:
@@ -101,7 +106,7 @@ def update_pwd():
     if 'success' in session:
         success = session['success']
         session.pop('success', None)
-    return render_template('updatepwd.html', error=error, success=success)
+    return render_template('update_password.html', error=error, success=success)
 
 
 @app.route('/handle_login', methods=['POST'])
@@ -110,6 +115,7 @@ def handle_login():
         abort(500)
     if 'userToken' in session:
         return redirect('/')
+
     try:
         enrollment_no = request.form['enrollment_no']
     except KeyError:
@@ -118,10 +124,12 @@ def handle_login():
         password = request.form['password']
     except KeyError:
         password = ''
+
     if connection == '':
         session['adminError'] = "Database inconsistency - Call Admin"
         abort(500)
     status = verify_login(enrollment_no, password, connection)
+
     if status == "Login Success":
         session['success'] = status
         random_session_hash = get_random_hash()
@@ -136,13 +144,14 @@ def handle_login():
         return redirect('/login')
 
 
-@app.route('/handle_updatepwd', methods=['POST'])
-def handle_updatepwd():
+@app.route('/handle_update_password', methods=['POST'])
+def handle_update_password():
     if 'adminError' in session:
         abort(500)
     if 'userToken' not in session:
         session['error'] = "You must login to access the site."
         return redirect('/login')
+
     try:
         current_password = request.form['current_password']
     except KeyError:
@@ -155,6 +164,7 @@ def handle_updatepwd():
         confirm_password = request.form['confirm_password']
     except KeyError:
         confirm_password = ''
+
     if connection == '':
         session['adminError'] = "Database inconsistency - Call Admin"
         abort(500)
@@ -163,16 +173,17 @@ def handle_updatepwd():
         session['error'] = "You must login again to access the site."
         session.pop('userToken', None)
         return redirect('/login')
-    status = update_password(enrollment_no, current_password, new_password, confirm_password, connection)
+
+    status = change_password(enrollment_no, current_password, new_password, confirm_password, connection)
     if status == "Password updated successfully":
         session['success'] = status
-        return redirect('/updatepwd')
+        return redirect('/update_password')
     elif status == "Database inconsistency - Call Admin":
         session['adminError'] = status
         abort(500)
     else:
         session['error'] = status
-        return redirect('/updatepwd')
+        return redirect('/update_password')
 
 
 @app.route('/logout')
@@ -198,19 +209,39 @@ def reset_session():
     return redirect('/login')
 
 
-@app.errorhandler(CSRFError)
+@app.errorhandler(400)
 def handle_csrf_error(e):
-    token = session['userToken']
+    if 'userToken' in session:
+        token = session['userToken']
+        remove_token(token, connection)
     session.clear()
-    remove_token(token, connection)
-    return render_template('csrf_error.html', reason=e.description), 400
+    logger.warning(e.description)
+    return render_template('csrf_error.html'), 400
 
 
 @app.errorhandler(404)
 def handle_404(e):
-    return render_template("pagenotfound.html"), 404
+    logger.warning(e.description)
+    return render_template("404_error.html"), 404
 
 
 @app.errorhandler(500)
 def handle_500(e):
-    return render_template("internalerror.html"), 500
+    logger.warning(e.description)
+    return render_template("500_error.html"), 500
+
+
+@app.route('/dashboard')
+def dashboard():
+    if 'adminError' in session:
+        abort(500)
+    if 'userToken' not in session:
+        session['error'] = "You must login to access the site."
+        return redirect('/login')
+    student_id = get_student_id(session['userToken'], connection)
+    if student_id == -1:
+        session['error'] = "You must login again to access the site."
+        session.pop('userToken', None)
+        return redirect('/login')
+    student_data = get_student_data(student_id, connection)
+    return render_template("dashboard.html", student_data=student_data)

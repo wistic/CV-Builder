@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}
+    DashBoard
+{% endblock title %}
+{% block content %}
+    <div class="card mt-3">
+        <div class="card-body">
+            <nav class="navbar navbar-light bg-light shadow-sm p-3 mb-5 bg-white rounded">
+                <a class="navbar-brand text-primary">
+                    {{ name }}'s Dashboard
+                </a>
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="/update_password">Change Password</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock content %}

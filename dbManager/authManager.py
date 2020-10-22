@@ -29,7 +29,7 @@ def verify_login(enrollment_no, password, connection):
             return "Invalid Enrollment Number or Password"
 
 
-def update_password(enrollment_no, current_password, new_password, confirm_new_password, connection):
+def change_password(enrollment_no, current_password, new_password, confirm_new_password, connection):
     status = verify_login(enrollment_no, current_password, connection)
     if status == "Database inconsistency - Call Admin":
         return status
