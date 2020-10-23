@@ -1,4 +1,4 @@
-from flask import (Flask, render_template, redirect, session, abort)
+from flask import (Flask, render_template, redirect, session, abort, request)
 from flask_wtf.csrf import CSRFProtect
 import os
 
@@ -18,49 +18,42 @@ def homepage(**kwargs):
     return render_template('index.html', student_data=student_data)
 
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 @login_not_required
 def login(**kwargs):
+    if request.method == 'POST':
+        status_code, description = verify_login(kwargs['student_id'], kwargs['password'], connection)
+        if status_code is Status.SUCCESS:
+            random_session_hash = get_random_hash()
+            session['userToken'] = random_session_hash
+            insert_token(random_session_hash, kwargs['student_id'], connection)
+            return redirect('/')
+        elif status_code is Status.ERROR:
+            session['adminError'] = description
+            abort(500)
+        else:
+            session['error'] = description
+            return redirect('/login')
     return render_template('login.html', error=kwargs['error'], success=kwargs['success'])
 
 
-@app.route('/update_password')
+@app.route('/update_password', methods=['GET', 'POST'])
 @login_required
 def update_password(**kwargs):
+    if request.method == 'POST':
+        status_code, description = change_password(kwargs['student_id'], kwargs['current_password'],
+                                                   kwargs['new_password'],
+                                                   kwargs['confirm_new_password'], connection)
+        if status_code is Status.SUCCESS:
+            session['success'] = description
+            return redirect('/update_password')
+        elif status_code is Status.ERROR:
+            session['adminError'] = description
+            abort(500)
+        else:
+            session['error'] = description
+            return redirect('/update_password')
     return render_template('update_password.html', error=kwargs['error'], success=kwargs['success'])
-
-
-@app.route('/handle_login', methods=['POST'])
-@login_not_required
-def handle_login(**kwargs):
-    status_code, description = verify_login(kwargs['student_id'], kwargs['password'], connection)
-    if status_code is Status.SUCCESS:
-        random_session_hash = get_random_hash()
-        session['userToken'] = random_session_hash
-        insert_token(random_session_hash, kwargs['student_id'], connection)
-        return redirect('/')
-    elif status_code is Status.ERROR:
-        session['adminError'] = description
-        abort(500)
-    else:
-        session['error'] = description
-        return redirect('/login')
-
-
-@app.route('/handle_update_password', methods=['POST'])
-@login_required
-def handle_update_password(**kwargs):
-    status_code, description = change_password(kwargs['student_id'], kwargs['current_password'], kwargs['new_password'],
-                                               kwargs['confirm_new_password'], connection)
-    if status_code is Status.SUCCESS:
-        session['success'] = description
-        return redirect('/update_password')
-    elif status_code is Status.ERROR:
-        session['adminError'] = description
-        abort(500)
-    else:
-        session['error'] = description
-        return redirect('/update_password')
 
 
 @app.route('/logout')
