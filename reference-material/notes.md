@@ -2,3 +2,7 @@
     : `loss of Normal form`
 - Recheck all schemas
 - Add some data to each db for testing purposes
+
+
+- double logging
+- cleanup authcode

@@ -7,14 +7,14 @@
         <div class="card-body">
             <nav class="navbar navbar-light bg-light shadow-sm p-3 mb-5 bg-white rounded">
                 <a class="navbar-brand text-primary">
-                    {{ name }}'s Dashboard
+                    {{ student_data['Name'] }}'s Dashboard
                 </a>
                 <ul class="nav nav-pills">
                     <li class="nav-item">
-                        <a class="nav-link text-danger" href="/update_password">Change Password</a>
+                        <a class="btn btn-outline-danger" href="/student">Edit Mode</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-danger" href="/logout">Logout</a>
+                        <a class="btn btn-link" href="/">Back to Home</a>
                     </li>
                 </ul>
             </nav>
